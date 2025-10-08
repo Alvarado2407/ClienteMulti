@@ -34,7 +34,7 @@ public class UnCliente implements Runnable {
     public void run(){
         String mensaje;
         try {
-            // Enviar mensaje de bienvenida al cliente
+
             salida.writeUTF("¡Bienvenido! Eres " + clienteUsuario);
             salida.writeUTF("Comandos disponibles:");
             salida.writeUTF("- Escribe un mensaje normal para enviarlo a todos");
@@ -56,13 +56,15 @@ public class UnCliente implements Runnable {
                 }
                 if(mensaje.startsWith("@")){
                     String[] partes = mensaje.split(" ");
-                    String deQuien;
                     String aQuien = partes[0].substring(1);
                     UnCliente cliente = ServidorMulti.clientes.get(aQuien);
                     cliente.salida.writeUTF(mensaje);
                     return;
                 }
                 for(UnCliente cliente : ServidorMulti.clientes.values()){
+                    if (clienteUsuario == cliente) {
+
+                    }
                     cliente.salida.writeUTF(mensaje);
                 }
             } catch (IOException e) {

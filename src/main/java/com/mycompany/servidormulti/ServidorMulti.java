@@ -15,6 +15,16 @@ import java.util.HashMap;
  */
 public class ServidorMulti {
     static HashMap<String, UnCliente> clientes = new HashMap <>();
+
+    public static void notificarTodos(String mensaje, UnCliente excluir){
+        for(UnCliente cliente : clientes.values()){
+            if(cliente!=excluir){
+                try{
+                    cliente.salida.writeUTF(mensaje);
+                }catch(IOException e){}
+            }
+        }
+    }
     
     public static void main(String[] args) throws IOException {
         ServerSocket servidorSocket = new ServerSocket(8080);
@@ -27,6 +37,7 @@ public class ServidorMulti {
             clientes.put(clienteUsuario, unCliente);
             hilo.start();
             System.out.println("Se conectó el "+clienteUsuario);
+            notificarTodos("*** " + clienteUsuario + "se ha conectado al chat ***", unCliente);
             contador++;
         }
     }
