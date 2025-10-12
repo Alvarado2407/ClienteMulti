@@ -39,7 +39,7 @@ public class Autenticacion {
         usuariosAutenticados.put(clienteUsuario, true);
         nombresUsuarios.put(clienteUsuario, usuario);
 
-        return "Registro exitoso, eres: " + usuario + " puedes enviar mensajes ilimitados.";
+        return "EXITO, eres: " + usuario + " puedes enviar mensajes ilimitados.";
     }
 
     public static String procesarLogin(String clienteUsuario, String usuario, String contra) {
@@ -51,7 +51,7 @@ public class Autenticacion {
         }
         usuariosAutenticados.put(clienteUsuario, true);
         nombresUsuarios.put(clienteUsuario, usuario);
-        return "Inicio de sesion exitoso, bienvenido de vuelta: " + usuario;
+        return "EXITO, bienvenido de vuelta: " + usuario;
     }
 
     public static boolean estaAutenticado(String clienteUsuario) {
@@ -65,6 +65,20 @@ public class Autenticacion {
         return clienteUsuario;
     }
 
+    public static void limpiarCliente(String clienteUsuario) {
+        mensajesEnviados.remove(clienteUsuario);
+        nombresUsuarios.remove(clienteUsuario);
+        usuariosAutenticados.remove(clienteUsuario);
+    }
+
+
+    public static int getMensajesRestantes(String clienteUsuario) {
+        if(estaAutenticado(clienteUsuario)){
+            return -1;
+        }
+        int enviados = mensajesEnviados.getOrDefault(clienteUsuario, 0);
+        return LIMITE_MENSAJES - enviados;
+    }
 
 
 }
