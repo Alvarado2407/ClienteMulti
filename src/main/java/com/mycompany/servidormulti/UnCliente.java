@@ -55,19 +55,35 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 if(mensaje.startsWith("@")){
-                    String[] partes = mensaje.split(" ");
-                    String aQuien = partes[0].substring(1);
-                    UnCliente cliente = ServidorMulti.clientes.get(aQuien);
-                    cliente.salida.writeUTF(mensaje);
-                    return;
-                }
-                for(UnCliente cliente : ServidorMulti.clientes.values()){
-                    if (clienteUsuario == cliente) {
-
+                    String[] partes = mensaje.split(" ",2);
+                    if(partes.length<2){
+                        salida.writeUTF("Formato incorrecto, usa @NombreUsuario mensaje para enviar mensaje privado");
+                        continue;
                     }
-                    cliente.salida.writeUTF(mensaje);
+                    String aQuien = partes[0].substring(1);
+                    String mensajePrivado = partes[1];
+                    UnCliente clienteDestino = ServidorMulti.clientes.get(aQuien);
+
+                    if(clienteDestino!=null){
+                        String mensajeFormateado = "[PRIVADO]" + clienteUsuario + "te dice: " + mensajePrivado;
+                        clienteDestino.salida.writeUTF(mensajeFormateado);
+                        salida.writeUTF("Mensaje privado enviado a " + aQuien);
+                    }else{
+                        salida.writeUTF("No se pudo enviar un mensaje privado");
+                    }
+                    continue;
+                }
+                String mensajeConRemitente = clienteUsuario + ": " + mensaje;
+                for(UnCliente cliente : ServidorMulti.clientes.values()){
+                    if (!clienteUsuario.equals(cliente.getClienteUsuario())) {
+                        cliente.salida.writeUTF(mensajeConRemitente);
+                    }
                 }
             } catch (IOException e) {
+                System.out.println("cliente " + clienteUsuario + " se desconecto");
+                ServidorMulti.notificarTodos("*** " + clienteUsuario + " se ha desconectado ***",this);
+                ServidorMulti.clientes.remove(clienteUsuario);
+                break;
             }
 
         }
