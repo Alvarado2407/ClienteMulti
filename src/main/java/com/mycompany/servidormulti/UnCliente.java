@@ -149,7 +149,7 @@ public class UnCliente implements Runnable {
             return cliente;
         }
         for(UnCliente c : ServidorMulti.clientes.values()){
-            if(Autenticacion.getNombreDisplay(clienteUsuario).equals(nombre)){
+            if(Autenticacion.getNombreDisplay(c.clienteUsuario).equals(nombre)){
                 return c;
             }
         }
