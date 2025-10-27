@@ -27,8 +27,19 @@ public class ServidorMulti {
     }
     
     public static void main(String[] args) throws IOException {
+        Database.inicializar();
         ServerSocket servidorSocket = new ServerSocket(8080);
         int contador = 0;
+        if(Database.estaConectado()){
+            System.out.println("Base de datos conectada. Los usuarios se guardaran permanentemente");
+        }else{
+            System.out.println("Modo offline. Los usuarios se guardaran solo en memoria");
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Database.cerrarConexion();
+        }));
+
         while (true){
             Socket s = servidorSocket.accept();
             String clienteUsuario = "Usuario" + contador;
