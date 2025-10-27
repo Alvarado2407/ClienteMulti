@@ -12,7 +12,7 @@ import java.util.Properties;
 
 public class Database {
 
-    private static String DB_URL = "jdbc:mysql://localhost:5432/chat_db";
+    private static String DB_URL = "jdbc:postgresql://localhost:5432/chat_db";
     private static String DB_USER = "postgres";
     private static String DB_PASSWORD = "Quieroserescritora10";
 
@@ -24,7 +24,7 @@ public class Database {
             cargarConfiguracion();
             Class.forName("org.postgresql.Driver");
 
-            connection = DriverManager.getConnection(DB_URL,DB_USER,DB_PASSWORD);
+            conexion = DriverManager.getConnection(DB_URL,DB_USER,DB_PASSWORD);
 
             crearTablaUsuarios();
 
@@ -126,7 +126,7 @@ public class Database {
             pstmt.setString(1,username);
 
             try(ResultSet rt = pstmt.executeQuery()){
-                return rs.next();
+                return rt.next();
             }
         }catch(SQLException e ){
             System.err.println("Error al obtener el usuario: "+e.getMessage());

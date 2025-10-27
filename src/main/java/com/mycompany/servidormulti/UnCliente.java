@@ -54,7 +54,7 @@ public class UnCliente implements Runnable {
                 if(mensaje.startsWith("/registro")) {
                     String[] partes = mensaje.split(" ");
                     if (partes.length == 3) {
-                        String resultado = Autenticacion.procesarRegistro(clienteUsuario, partes[1], partes[2]);
+                        String resultado = SistemaAutenticacion.procesarRegistro(clienteUsuario, partes[1], partes[2]);
                         salida.writeUTF(resultado);
                         if (resultado.startsWith("EXITO")) {
                             ServidorMulti.notificarTodos("*** " + clienteUsuario + " ahora es " + partes[1] + "  ***", this);
@@ -68,7 +68,7 @@ public class UnCliente implements Runnable {
                     if(mensaje.startsWith("/login ")){
                         String[] parteslog = mensaje.split(" ");
                         if(parteslog.length == 3){
-                            String resultado = Autenticacion.procesarLogin(clienteUsuario, parteslog[1], parteslog[2]);
+                            String resultado = SistemaAutenticacion.procesarLogin(clienteUsuario, parteslog[1], parteslog[2]);
                             salida.writeUTF(resultado);
                             if(resultado.startsWith("EXITO")){
                                 ServidorMulti.notificarTodos("*** " + clienteUsuario + " ahora es " + parteslog[1] + "  ***",this);
@@ -83,12 +83,12 @@ public class UnCliente implements Runnable {
                 if(mensaje.equals("/usuarios")) {
                     StringBuilder usuarios = new StringBuilder("Usuarios conectados: ");
                     for (String user : ServidorMulti.clientes.keySet()) {
-                        usuarios.append(Autenticacion.getNombreDisplay(user)).append(", ");
+                        usuarios.append(SistemaAutenticacion.getNombreDisplay(user)).append(", ");
                     }
                     salida.writeUTF(usuarios.toString());
                     continue;
                 }
-                    if(!Autenticacion.puedeEnviarMensajes(clienteUsuario)){
+                    if(!SistemaAutenticacion.puedeEnviarMensajes(clienteUsuario)){
                         salida.writeUTF("Has alcanzado el limite de 3 mensajes gratuitos");
                         salida.writeUTF("Registrate (/registro) o inicia sesion (/login) para enviar mensajes ilimitados");
                         salida.writeUTF("Puedes seguir viendo los mensajes de los demas usuarios");
@@ -105,12 +105,12 @@ public class UnCliente implements Runnable {
                     UnCliente clienteDestino = buscarClientePorNombre(aQuien);
 
                     if(clienteDestino!=null){
-                        String nombreRemitente = Autenticacion.getNombreDisplay(clienteUsuario);
+                        String nombreRemitente = SistemaAutenticacion.getNombreDisplay(clienteUsuario);
                         String mensajeFormateado = "[PRIVADO] " + nombreRemitente + " te dice: " + mensajePrivado;
                         clienteDestino.salida.writeUTF(mensajeFormateado);
 
-                        salida.writeUTF("Mensaje privado enviado a " + Autenticacion.getNombreDisplay(clienteDestino.clienteUsuario));
-                        int restantes = Autenticacion.incrementarMensajes(clienteUsuario);
+                        salida.writeUTF("Mensaje privado enviado a " + SistemaAutenticacion.getNombreDisplay(clienteDestino.clienteUsuario));
+                        int restantes = SistemaAutenticacion.incrementarMensajes(clienteUsuario);
                         if(restantes>=0){
                             salida.writeUTF("Te quedan " + restantes + " mensajes gratuitos");
                         }
@@ -119,7 +119,7 @@ public class UnCliente implements Runnable {
                     }
                     continue;
                 }
-                String nombreRemitente = Autenticacion.getNombreDisplay(clienteUsuario);
+                String nombreRemitente = SistemaAutenticacion.getNombreDisplay(clienteUsuario);
                 String mensajeConRemitente = nombreRemitente + ": " + mensaje;
                 for(UnCliente cliente : ServidorMulti.clientes.values()){
                     if (!clienteUsuario.equals(cliente.getClienteUsuario())) {
@@ -127,15 +127,15 @@ public class UnCliente implements Runnable {
                     }
                 }
 
-                int restantes = Autenticacion.incrementarMensajes(clienteUsuario);
+                int restantes = SistemaAutenticacion.incrementarMensajes(clienteUsuario);
                 if(restantes>=0){
                     salida.writeUTF("Te quedan " + restantes + " mensajes gratuitos");
                 }
 
             } catch (IOException e) {
-                System.out.println("cliente " + Autenticacion.getNombreDisplay(clienteUsuario) + " se desconecto");
-                Autenticacion.limpiarCliente(clienteUsuario);
-                ServidorMulti.notificarTodos("*** " + Autenticacion.getNombreDisplay(clienteUsuario) + " se ha desconectado ***",this);
+                System.out.println("cliente " + SistemaAutenticacion.getNombreDisplay(clienteUsuario) + " se desconecto");
+                SistemaAutenticacion.limpiarCliente(clienteUsuario);
+                ServidorMulti.notificarTodos("*** " + SistemaAutenticacion.getNombreDisplay(clienteUsuario) + " se ha desconectado ***",this);
                 ServidorMulti.clientes.remove(clienteUsuario);
                 break;
             }
@@ -149,7 +149,7 @@ public class UnCliente implements Runnable {
             return cliente;
         }
         for(UnCliente c : ServidorMulti.clientes.values()){
-            if(Autenticacion.getNombreDisplay(c.clienteUsuario).equals(nombre)){
+            if(SistemaAutenticacion.getNombreDisplay(c.clienteUsuario).equals(nombre)){
                 return c;
             }
         }
