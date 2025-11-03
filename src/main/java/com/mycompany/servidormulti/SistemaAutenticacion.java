@@ -74,6 +74,12 @@ public class SistemaAutenticacion {
         usuariosAutenticados.remove(clienteId);
         nombresUsuarios.remove(clienteId);
         }
+    public static String getNombreUsuarioReal(String clienteId){
+        if(nombresUsuarios.containsKey(clienteId)){
+            return nombresUsuarios.get(clienteId);
+        }
+        return null;
+    }
 
         public static int getMensajesRestantes(String clienteId){
         if(estaAutenticado(clienteId)){

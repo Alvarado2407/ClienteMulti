@@ -1,6 +1,9 @@
 package com.mycompany.servidormulti;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class JuegoGato {
     private final String jugador1Id;
@@ -35,13 +38,23 @@ public class JuegoGato {
     private void inicializarTablero(){
         for(int i=0; i<3; i++){
             for(int j=0; j<3; j++){
-                tablero[i][j] = ' ';
+                tablero[i][j] = '-';
             }
         }
     }
 
     private void determinarQuienEmpieza(){
-        if(Math.random()<0.5){}
+        if(Math.random()<0.5){
+            turnoActualId = jugador1Id;
+            turnoActualNombre = jugador1Nombre;
+            simboloJugador1 = 'X';
+            simboloJugador2 = 'O';
+        } else {
+            turnoActualId = jugador2Id;
+            turnoActualNombre = jugador2Nombre;
+            simboloJugador1 = 'O';
+            simboloJugador2 = 'X';
+        }
     }
     public void iniciarJuego(){
      try{
@@ -102,12 +115,38 @@ public class JuegoGato {
         if(verificarGanador(simbolo)){
             juegoTerminado = true;
             ganador = clienteId.equals(jugador1Id) ? jugador1Nombre : jugador2Nombre;
+            String perdedor = clienteId.equals(jugador1Id) ? jugador2Nombre : jugador1Nombre;
+            
+            // Registrar estadísticas en la base de datos
+            String ganadorClienteId = clienteId.equals(jugador1Id) ? jugador1Id : jugador2Id;
+            String perdedorClienteId = clienteId.equals(jugador1Id) ? jugador2Id : jugador1Id;
+
+            String nombreGanadorReal = SistemaAutenticacion.getNombreUsuarioReal(ganadorClienteId);
+            String nombrePerdedorReal = SistemaAutenticacion.getNombreUsuarioReal(perdedorClienteId);
+            if(nombreGanadorReal != null && nombrePerdedorReal != null){
+                System.out.println("Registrando victoria: " + nombreGanadorReal + " gana contra " + nombrePerdedorReal);
+                Database.registrarVictoria(nombreGanadorReal, nombrePerdedorReal);
+            } else {
+                System.out.println("No se registraron estadisticas (uno o ambos jugadores son invitados)");
+            }
+            
             notificarFinJuego(ganador + " ha ganado el juego. Yay :D");
             return "Ganaste el juego";
         }
 
         if(verificarEmpate()){
             juegoTerminado = true;
+            
+            // Registrar empate en la base de datos
+            String nombreJ1Real = SistemaAutenticacion.getNombreUsuarioReal(jugador1Nombre);
+            String nombreJ2Real = SistemaAutenticacion.getNombreUsuarioReal(jugador2Nombre);
+            if(nombreJ1Real != null && nombreJ2Real != null){
+                System.out.println("Registrando empate entre: " + nombreJ1Real + " y " + nombreJ2Real);
+                Database.registrarEmpate(nombreJ1Real, nombreJ2Real);
+            } else {
+                System.out.println("No se registraron estadisticas (uno o ambos jugadores son invitados)");
+            }
+            
             notificarFinJuego ("Juego terminado en empate");
             return "Empate";
         }
@@ -153,10 +192,11 @@ public class JuegoGato {
         for(int i=0; i<3; i++){
             sb.append(i).append(" ");
             for(int j=0; j<3; j++){
-                sb.append(tablero[i][j]).append(" ");
+                sb.append(" ").append(tablero[i][j]).append(" ");
+                if(j < 2) sb.append("|");
             }
             sb.append("\n");
-            if(i<2) sb.append(" ------------------------------\n");
+            if(i<2) sb.append("  ---+---+---\n");
         }
         return sb.toString();
     }
@@ -235,7 +275,3 @@ public class JuegoGato {
     }
 
 }
-
-
-
-
