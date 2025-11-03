@@ -90,6 +90,197 @@ public class Database {
             stmt.execute(sql);
             System.out.println("Tabla estadisticas creada");
         }
+        crearTablaGrupos();
+        crearTablaMiembrosGrupo();
+        crearTablaMensajesGrupo();
+    }
+    private static void crearTablaGrupos() throws SQLException{
+        String sql = """
+                CREATE TABLE IF NOT EXISTS grupos(
+                id SERIAL PRIMARY KEY,
+                nombre varchar(50) UNIQUE NOT NULL,
+                creador varchar(50),
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """;
+
+        try(Statement stmt = conexion.createStatement()){
+            stmt.execute(sql);
+            System.out.println("Tabla grupos creada");
+        }
+    }
+
+    private static void crearTablaMiembrosGrupo() throws SQLException{
+        String sql = """
+                CREATE TABLE IF NOT EXISTS miembros_grupo(
+                id SERIAL PRIMARY KEY,
+                grupo_nombre varchar(50) NOT NULL,
+                username varchar(50) NOT NULL,
+                fecha_union TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(grupo_nombre, username)
+                )
+                """;
+
+        try(Statement stmt = conexion.createStatement()){
+            stmt.execute(sql);
+            System.out.println("Tabla miembros_grupo creada");
+        }
+    }
+
+    private static void crearTablaMensajesGrupo() throws SQLException{
+        String sql = """
+                CREATE TABLE IF NOT EXISTS mensajes_grupo(
+                id SERIAL PRIMARY KEY,
+                grupo_nombre varchar(50) NOT NULL,
+                username varchar(50) NOT NULL,
+                mensaje TEXT NOT NULL,
+                fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """;
+
+        try(Statement stmt = conexion.createStatement()){
+            stmt.execute(sql);
+            System.out.println("Tabla mensajes_grupo creada");
+        }
+    }
+
+    public static boolean crearGrupoSiNoExiste(String nombreGrupo){
+        if(conexion == null) return false;
+
+        if(existeGrupo(nombreGrupo)){
+            return true;
+        }
+
+        return crearGrupo(nombreGrupo, null);
+    }
+
+    public static boolean crearGrupo(String nombreGrupo, String creador){
+        if(conexion == null) return false;
+
+        String sql = "INSERT INTO grupos(nombre, creador) VALUES(?,?)";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1, nombreGrupo);
+            pstmt.setString(2, creador);
+            return pstmt.executeUpdate() > 0;
+        }catch(SQLException e){
+            System.err.println("Error creando grupo: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean existeGrupo(String nombreGrupo){
+        if(conexion == null) return false;
+
+        String sql = "SELECT 1 FROM grupos WHERE nombre = ?";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1, nombreGrupo);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
+        }catch(SQLException e){
+            System.err.println("Error verificando grupo: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean eliminarGrupo(String nombreGrupo){
+        if(conexion == null) return false;
+
+        try{
+            // Eliminar mensajes
+            String sql1 = "DELETE FROM mensajes_grupo WHERE grupo_nombre = ?";
+            try(PreparedStatement pstmt = conexion.prepareStatement(sql1)){
+                pstmt.setString(1, nombreGrupo);
+                pstmt.executeUpdate();
+            }
+
+            // Eliminar miembros
+            String sql2 = "DELETE FROM miembros_grupo WHERE grupo_nombre = ?";
+            try(PreparedStatement pstmt = conexion.prepareStatement(sql2)){
+                pstmt.setString(1, nombreGrupo);
+                pstmt.executeUpdate();
+            }
+
+            // Eliminar grupo
+            String sql3 = "DELETE FROM grupos WHERE nombre = ?";
+            try(PreparedStatement pstmt = conexion.prepareStatement(sql3)){
+                pstmt.setString(1, nombreGrupo);
+                return pstmt.executeUpdate() > 0;
+            }
+        }catch(SQLException e){
+            System.err.println("Error eliminando grupo: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static void agregarMiembroAGrupo(String nombreGrupo, String username){
+        if(conexion == null) return;
+
+        String sql = "INSERT INTO miembros_grupo(grupo_nombre, username) VALUES(?,?) ON CONFLICT DO NOTHING";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1, nombreGrupo);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
+        }catch(SQLException e){
+            System.err.println("Error agregando miembro al grupo: " + e.getMessage());
+        }
+    }
+
+    public static void guardarMensaje(String nombreGrupo, String username, String mensaje){
+        if(conexion == null) return;
+
+        String sql = "INSERT INTO mensajes_grupo(grupo_nombre, username, mensaje) VALUES(?,?,?)";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1, nombreGrupo);
+            pstmt.setString(2, username);
+            pstmt.setString(3, mensaje);
+            pstmt.executeUpdate();
+        }catch(SQLException e){
+            System.err.println("Error guardando mensaje: " + e.getMessage());
+        }
+    }
+
+    public static List<String> obtenerMensajesNoLeidos(String nombreGrupo, Timestamp ultimoVisto){
+        List<String> mensajes = new ArrayList<>();
+        if(conexion == null) return mensajes;
+
+        String sql = "SELECT username, mensaje, fecha_envio FROM mensajes_grupo WHERE grupo_nombre = ? AND fecha_envio > ? ORDER BY fecha_envio ASC LIMIT 50";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1, nombreGrupo);
+            pstmt.setTimestamp(2, ultimoVisto);
+
+            ResultSet rs = pstmt.executeQuery();
+            while(rs.next()){
+                String user = rs.getString("username");
+                String msg = rs.getString("mensaje");
+                Timestamp fecha = rs.getTimestamp("fecha_envio");
+                mensajes.add("[" + fecha + "] " + user + ": " + msg);
+            }
+        }catch(SQLException e){
+            System.err.println("Error obteniendo mensajes no leídos: " + e.getMessage());
+        }
+
+        return mensajes;
+    }
+
+    public static List<String> obtenerListaGrupos(){
+        List<String> grupos = new ArrayList<>();
+        if(conexion == null){
+            grupos.add("Todos");
+            return grupos;
+        }
+
+        String sql = "SELECT nombre FROM grupos ORDER BY nombre";
+        try(Statement stmt = conexion.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)){
+
+            while(rs.next()){
+                grupos.add(rs.getString("nombre"));
+            }
+        }catch(SQLException e){
+            System.err.println("Error obteniendo lista de grupos: " + e.getMessage());
+        }
+
+        return grupos;
     }
 
     public static boolean registrarUsuario(String username, String password){

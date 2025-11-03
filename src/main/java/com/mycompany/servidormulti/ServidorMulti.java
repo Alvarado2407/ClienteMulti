@@ -28,6 +28,8 @@ public class ServidorMulti {
     
     public static void main(String[] args) throws IOException {
         Database.inicializar();
+        GestorGrupos.inicializar();
+        
         ServerSocket servidorSocket = new ServerSocket(8080);
         int contador = 0;
         if(Database.estaConectado()){
@@ -46,9 +48,12 @@ public class ServidorMulti {
             UnCliente unCliente = new UnCliente(s, clienteUsuario);
             Thread hilo = new Thread(unCliente);
             clientes.put(clienteUsuario, unCliente);
+            
+            // Registrar en el gestor de grupos
+            GestorGrupos.clienteConectado(clienteUsuario);
+            
             hilo.start();
             System.out.println("Se conectó el "+clienteUsuario);
-            notificarTodos("*** " + clienteUsuario + "se ha conectado al chat ***", unCliente);
             contador++;
         }
     }

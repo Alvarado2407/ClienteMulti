@@ -46,6 +46,10 @@ public class UnCliente implements Runnable {
             salida.writeUTF("- Usa /vs jugador1 jugador2 para ver estadisticas entre dos jugadores");
             salida.writeUTF("- Usa /registro usuario contrase;a para registrarte");
             salida.writeUTF("- Usa /login usuario contrase;a para iniciar sesion");
+            salida.writeUTF("- Usa /creargrupo NombreGrupo para crear un grupo");
+            salida.writeUTF("- Usa /unirsegrupo NombreGrupo para unirse a un grupo");
+            salida.writeUTF("- Usa /eliminargrupo NombreGrupo para eliminar un grupo");
+            salida.writeUTF("- Usa /grupos para ver todos los grupos");
             salida.writeUTF("- Usa /jugar NombreUsuario para invitar a jugar al gato");
             salida.writeUTF("- Usa /aceptar para aceptar una invitacion");
             salida.writeUTF("- Usa /rechazar para rechazar una invitacion");
@@ -114,6 +118,45 @@ public class UnCliente implements Runnable {
                     }
                     String estadisticas = Database.obtenerEstadisticasVs(partes[1], partes[2]);
                     salida.writeUTF(estadisticas);
+                    continue;
+                }
+                
+                // Comando para crear grupo
+                if(mensaje.startsWith("/creargrupo ")){
+                    String[] partes = mensaje.split(" ", 2);
+                    if(partes.length < 2){
+                        salida.writeUTF("Uso: /creargrupo NombreGrupo");
+                        continue;
+                    }
+                    GestorGrupos.crearGrupo(clienteUsuario, partes[1].trim(), this);
+                    continue;
+                }
+                
+                // Comando para unirse a grupo
+                if(mensaje.startsWith("/unirsegrupo ")){
+                    String[] partes = mensaje.split(" ", 2);
+                    if(partes.length < 2){
+                        salida.writeUTF("Uso: /unirsegrupo NombreGrupo");
+                        continue;
+                    }
+                    GestorGrupos.unirseAGrupo(clienteUsuario, partes[1].trim(), this);
+                    continue;
+                }
+                
+                // Comando para eliminar grupo
+                if(mensaje.startsWith("/eliminargrupo ")){
+                    String[] partes = mensaje.split(" ", 2);
+                    if(partes.length < 2){
+                        salida.writeUTF("Uso: /eliminargrupo NombreGrupo");
+                        continue;
+                    }
+                    GestorGrupos.eliminarGrupo(clienteUsuario, partes[1].trim(), this);
+                    continue;
+                }
+                
+                // Comando para listar grupos
+                if(mensaje.equals("/grupos")){
+                    GestorGrupos.listarGrupos(this);
                     continue;
                 }
                 
@@ -204,15 +247,9 @@ public class UnCliente implements Runnable {
                     continue;
                 }
                 
-                // Mensaje público
-                String nombreRemitente = SistemaAutenticacion.getNombreDisplay(clienteUsuario);
-                String mensajeConRemitente = nombreRemitente + ": " + mensaje;
-                for(UnCliente cliente : ServidorMulti.clientes.values()){
-                    if (!clienteUsuario.equals(cliente.getClienteUsuario())) {
-                        cliente.salida.writeUTF(mensajeConRemitente);
-                    }
-                }
-
+                // Mensaje público - ahora va al grupo actual
+                GestorGrupos.enviarMensajeGrupo(clienteUsuario, mensaje, this);
+                
                 int restantes = SistemaAutenticacion.incrementarMensajes(clienteUsuario);
                 if(restantes>=0){
                     salida.writeUTF("Te quedan " + restantes + " mensajes gratuitos");
@@ -223,6 +260,9 @@ public class UnCliente implements Runnable {
                 
                 // Manejar desconexión en juegos activos
                 GestorJuegos.manejarDesconexion(clienteUsuario);
+                
+                // Manejar desconexión en grupos
+                GestorGrupos.clienteDesconectado(clienteUsuario);
                 
                 SistemaAutenticacion.limpiarCliente(clienteUsuario);
                 ServidorMulti.notificarTodos("*** " + SistemaAutenticacion.getNombreDisplay(clienteUsuario) + " se ha desconectado ***",this);
