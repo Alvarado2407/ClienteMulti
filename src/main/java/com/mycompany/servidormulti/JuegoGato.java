@@ -78,7 +78,7 @@ public class JuegoGato {
 
     private void enviarInstrucciones() throws IOException{
         try{
-            String instrucciones = "Para jugar usa /jugar fila columna (ejemplo: /jugar 1 2)";
+            String instrucciones = "Para jugar usa /mover fila columna (ejemplo: /jugar 1 2)";
             cliente1.salida.writeUTF(instrucciones);
             cliente2.salida.writeUTF(instrucciones);
         }catch (IOException e){
