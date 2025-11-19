@@ -16,7 +16,8 @@ public class SistemaAutenticacion {
     private static final List<String> COMANDOS_RESERVADOS = Arrays.asList(
             "registro", "login", "usuarios", "ranking", "vs",
             "creargrupo", "unirsegrupo", "eliminargrupo", "grupos",
-            "jugar", "aceptar", "rechazar", "mover", "logout", "eliminarcuenta"
+            "jugar", "aceptar", "rechazar", "mover", "logout", "eliminarcuenta",
+            "bloquear", "desbloquear", "bloqueados"
     );
 
     public static boolean puedeEnviarMensajes(String clienteId){

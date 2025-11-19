@@ -48,6 +48,9 @@ public class UnCliente implements Runnable {
             salida.writeUTF("- Usa /login usuario contrase;a para iniciar sesion");
             salida.writeUTF("- Usa /logout para cerrar sesion");
             salida.writeUTF("- Usa /eliminarcuenta para eliminar tu cuenta permanentemente");
+            salida.writeUTF("- Usa /bloquear NombreUsuario para bloquear a un usuario");
+            salida.writeUTF("- Usa /desbloquear NombreUsuario para desbloquear a un usuario");
+            salida.writeUTF("- Usa /bloqueados para ver tu lista de usuarios bloqueados");
             salida.writeUTF("- Usa /creargrupo NombreGrupo para crear un grupo");
             salida.writeUTF("- Usa /unirsegrupo NombreGrupo para unirse a un grupo");
             salida.writeUTF("- Usa /eliminargrupo NombreGrupo para eliminar un grupo");
@@ -193,7 +196,97 @@ public class UnCliente implements Runnable {
                     continue;
 
                 }
-                
+
+
+                // Comando para bloquear usuario
+                if(mensaje.startsWith("/bloquear ")){
+                    String[] partes = mensaje.split(" ", 2);
+                    if(partes.length < 2){
+                        salida.writeUTF("Uso: /bloquear NombreUsuario");
+                        continue;
+                    }
+
+                    if(!SistemaAutenticacion.estaAutenticado(clienteUsuario)){
+                        salida.writeUTF("ERROR: Debes iniciar sesion para bloquear usuarios");
+                        continue;
+                    }
+
+                    String usuarioABloquear = partes[1].trim();
+                    String miUsuario = SistemaAutenticacion.getNombreUsuarioReal(clienteUsuario);
+
+                    if(usuarioABloquear.equals(miUsuario)){
+                        salida.writeUTF("ERROR: No puedes bloquearte a ti mismo");
+                        continue;
+                    }
+
+                    if(!Database.existeUsuario(usuarioABloquear)){
+                        salida.writeUTF("ERROR: El usuario " + usuarioABloquear + " no existe");
+                        continue;
+                    }
+
+                    if(Database.yoBloquee(miUsuario, usuarioABloquear)){
+                        salida.writeUTF("Ya has bloqueado a " + usuarioABloquear);
+                        continue;
+                    }
+
+                    if(Database.bloquearUsuario(miUsuario, usuarioABloquear)){
+                        salida.writeUTF("Has bloqueado a " + usuarioABloquear);
+                    } else {
+                        salida.writeUTF("ERROR: No se pudo bloquear al usuario");
+                    }
+                    continue;
+                }
+
+                // Comando para desbloquear usuario
+                if(mensaje.startsWith("/desbloquear ")){
+                    String[] partes = mensaje.split(" ", 2);
+                    if(partes.length < 2){
+                        salida.writeUTF("Uso: /desbloquear NombreUsuario");
+                        continue;
+                    }
+
+                    if(!SistemaAutenticacion.estaAutenticado(clienteUsuario)){
+                        salida.writeUTF("ERROR: Debes iniciar sesion para desbloquear usuarios");
+                        continue;
+                    }
+
+                    String usuarioADesbloquear = partes[1].trim();
+                    String miUsuario = SistemaAutenticacion.getNombreUsuarioReal(clienteUsuario);
+
+                    if(!Database.yoBloquee(miUsuario, usuarioADesbloquear)){
+                        salida.writeUTF("No has bloqueado a " + usuarioADesbloquear);
+                        continue;
+                    }
+
+                    if(Database.desbloquearUsuario(miUsuario, usuarioADesbloquear)){
+                        salida.writeUTF("Has desbloqueado a " + usuarioADesbloquear);
+                    } else {
+                        salida.writeUTF("ERROR: No se pudo desbloquear al usuario");
+                    }
+                    continue;
+                }
+
+                // Comando para ver usuarios bloqueados
+                if(mensaje.equals("/bloqueados")){
+                    if(!SistemaAutenticacion.estaAutenticado(clienteUsuario)){
+                        salida.writeUTF("ERROR: Debes iniciar sesion para ver tu lista de bloqueados");
+                        continue;
+                    }
+
+                    String miUsuario = SistemaAutenticacion.getNombreUsuarioReal(clienteUsuario);
+                    List<String> bloqueados = Database.obtenerBloqueados(miUsuario);
+
+                    if(bloqueados.isEmpty()){
+                        salida.writeUTF("No has bloqueado a ningun usuario");
+                    } else {
+                        salida.writeUTF("=== USUARIOS BLOQUEADOS ===");
+                        for(String bloqueado : bloqueados){
+                            salida.writeUTF("- " + bloqueado);
+                        }
+                    }
+                    continue;
+                }
+
                 // Comando para invitar a jugar
                 if(mensaje.startsWith("/jugar ")){
                     String[] partes = mensaje.split(" ", 2);
@@ -205,13 +298,25 @@ public class UnCliente implements Runnable {
                     
                     String nombreDestino = partes[1].trim();
                     UnCliente destinatario = buscarClientePorNombre(nombreDestino);
-                    
+
                     if(destinatario == null){
                         salida.writeUTF("Usuario no encontrado: " + nombreDestino);
                     } else if(destinatario.clienteUsuario.equals(clienteUsuario)){
                         salida.writeUTF("No puedes jugar contigo mismo");
                     } else {
-                        GestorJuegos.enviarInvitacion(clienteUsuario, destinatario.clienteUsuario, this, destinatario);
+                        // Verificar bloqueos
+                        String miUsuario = SistemaAutenticacion.getNombreUsuarioReal(clienteUsuario);
+                        String otroUsuario = SistemaAutenticacion.getNombreUsuarioReal(destinatario.clienteUsuario);
+
+                        if(miUsuario != null && otroUsuario != null && Database.estaBloqueado(miUsuario, otroUsuario)){
+                            if(Database.yoBloquee(miUsuario, otroUsuario)){
+                                salida.writeUTF("No puedes enviar invitacion a " + nombreDestino + " porque lo has bloqueado");
+                            } else {
+                                salida.writeUTF("El usuario " + nombreDestino + " no esta disponible");
+                            }
+                        } else {
+                            GestorJuegos.enviarInvitacion(clienteUsuario, destinatario.clienteUsuario, this, destinatario);
+                        }
                     }
                     continue;
                 }
@@ -266,14 +371,26 @@ public class UnCliente implements Runnable {
                     UnCliente clienteDestino = buscarClientePorNombre(aQuien);
 
                     if(clienteDestino!=null){
-                        String nombreRemitente = SistemaAutenticacion.getNombreDisplay(clienteUsuario);
-                        String mensajeFormateado = "[PRIVADO] " + nombreRemitente + " te dice: " + mensajePrivado;
-                        clienteDestino.salida.writeUTF(mensajeFormateado);
+                        // Verificar bloqueos
+                        String miUsuario = SistemaAutenticacion.getNombreUsuarioReal(clienteUsuario);
+                        String otroUsuario = SistemaAutenticacion.getNombreUsuarioReal(clienteDestino.clienteUsuario);
 
-                        salida.writeUTF("Mensaje privado enviado a " + SistemaAutenticacion.getNombreDisplay(clienteDestino.clienteUsuario));
-                        int restantes = SistemaAutenticacion.incrementarMensajes(clienteUsuario);
-                        if(restantes>=0){
-                            salida.writeUTF("Te quedan " + restantes + " mensajes gratuitos");
+                        if(miUsuario != null && otroUsuario != null && Database.estaBloqueado(miUsuario, otroUsuario)){
+                            if(Database.yoBloquee(miUsuario, otroUsuario)){
+                                salida.writeUTF("No puedes enviar mensajes a " + aQuien + " porque lo has bloqueado");
+                            } else {
+                                salida.writeUTF("El usuario " + aQuien + " no esta disponible");
+                            }
+                        } else {
+                            String nombreRemitente = SistemaAutenticacion.getNombreDisplay(clienteUsuario);
+                            String mensajeFormateado = "[PRIVADO] " + nombreRemitente + " te dice: " + mensajePrivado;
+                            clienteDestino.salida.writeUTF(mensajeFormateado);
+
+                            salida.writeUTF("Mensaje privado enviado a " + SistemaAutenticacion.getNombreDisplay(clienteDestino.clienteUsuario));
+                            int restantes = SistemaAutenticacion.incrementarMensajes(clienteUsuario);
+                            if(restantes>=0){
+                                salida.writeUTF("Te quedan " + restantes + " mensajes gratuitos");
+                            }
                         }
                     }else{
                         salida.writeUTF("No se pudo enviar un mensaje privado");

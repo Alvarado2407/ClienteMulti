@@ -14,4 +14,15 @@ CREATE TABLE IF NOT EXISTS usuarios (
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS bloqueos (
+    id SERIAL PRIMARY KEY,
+    bloqueador VARCHAR(50) NOT NULL,
+    bloqueado VARCHAR(50) NOT NULL,
+    fecha_bloqueo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(bloqueador, bloqueado),
+    FOREIGN KEY (bloqueador) REFERENCES usuarios(username) ON DELETE CASCADE,
+    FOREIGN KEY (bloqueado) REFERENCES usuarios(username) ON DELETE CASCADE
+);
+
+
 \dt

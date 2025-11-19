@@ -89,6 +89,25 @@ public class Database {
         crearTablaMiembrosGrupo();
         crearTablaMensajesGrupo();
     }
+
+    private static void crearTablaBloqueos() throws SQLException{
+        String sql = """
+                CREATE TABLE IF NOT EXISTS bloqueos(
+                id SERIAL PRIMARY KEY,
+                bloqueador varchar(50) NOT NULL,
+                bloqueado varchar(50) NOT NULL,
+                fecha_bloqueo TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                unique(bloqueador, bloqueado),
+                FOREIGN KEY (bloqueador) REFERENCES usuarios(username) ON DELETE CASCADE,
+                FOREIGN KEY (bloqueado) REFERENCES usuarios(username) ON DELETE CASCADE
+                )
+                """;
+        try(Statement stmt = conexion.createStatement()){
+            stmt.execute(sql);
+            System.out.println("Tabla bloqueos creada");
+        }
+    }
+
     private static void crearTablaGrupos() throws SQLException{
         String sql = """
                 CREATE TABLE IF NOT EXISTS grupos(
@@ -383,6 +402,13 @@ public class Database {
                 ps.executeUpdate();
             }
 
+            String sqlBloqueos = "DELETE FROM bloqueos WHERE bloqueador = ? OR bloqueado = ?";
+            try(PreparedStatement ps = conexion.prepareStatement(sqlBloqueos)) {
+                ps.setString(1,username);
+                ps.setString(2,username);
+                ps.executeUpdate();
+            }
+
             String sqlUsuario = "DELETE FROM usuarios WHERE username = ?";
             try(PreparedStatement ps = conexion.prepareStatement(sqlUsuario)) {
                 ps.setString(1,username);
@@ -414,6 +440,103 @@ public class Database {
                 System.err.println("Error al establecer autocommit en true: " + ex.getMessage());
             }
         }
+    }
+
+    public static boolean bloquearUsuario(String bloqueador, String bloqueado){
+        if(conexion == null) {
+            System.err.println("No hay conexion a la base de datos, no se puede bloquear el usuario: " + bloqueado);
+            return false;
+        }
+
+        if(bloqueador.equals(bloqueado)){
+            return false;
+        }
+
+        String sql = "INSERT INTO bloqueos(bloqueador, bloqueado) VALUES(?,?) ON CONFLICT DO NOTHING";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1,bloqueador);
+            pstmt.setString(2,bloqueado);
+            return pstmt.executeUpdate() > 0;
+        }catch(SQLException e){
+            System.err.println("Error al bloquear el usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean desbloquearUsuario(String bloqueador, String bloqueado){
+        if(conexion == null) {
+            System.err.println("No hay conexion a la base de datos, no se puede desbloquear el usuario: " + bloqueado);
+            return false;
+        }
+
+        String sql = "DELETE FROM bloqueos WHERE bloqueador = ? AND bloqueado = ?";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1,bloqueador);
+            pstmt.setString(2,bloqueado);
+            return pstmt.executeUpdate() > 0;
+        }catch(SQLException e){
+            System.err.println("Error al desbloquear el usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean estaBloqueado(String usuario1, String usuario2){
+        if(conexion == null) {
+            return false;
+        }
+
+        String sql = "SELECT 1 FROM bloqueo WHERE (bloqueador = ? AND bloqueado = ?) OR (bloqueador = ? AND bloqueado = ?)";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1,usuario1);
+            pstmt.setString(2,usuario2);
+            pstmt.setString(3,usuario2);
+            pstmt.setString(4,usuario1);
+
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
+        }catch (SQLException e){
+            System.err.println("Error al verificar bloqueo");
+            return false;
+        }
+    }
+
+    public static boolean yoBloquee(String bloqueador, String bloqueado){
+        if(conexion == null){
+            return false;
+        }
+
+        String sql = "SELECT 1 FROM bloqueos WHERE bloqueador = ? AND bloqueado = ?";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1, bloqueador);
+            pstmt.setString(2, bloqueado);
+
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
+        }catch(SQLException e){
+            System.err.println("Error al verificar si bloqueaste al usuario: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static List<String> obtenerBloqueados(String username){
+        List<String> bloqueados = new ArrayList<>();
+        if(conexion == null){
+            return bloqueados;
+        }
+
+        String sql = "SELECT bloqueado FROM bloqueos WHERE bloqueador = ? ORDER BY fecha_bloqueo DESC";
+        try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+
+            while(rs.next()){
+                bloqueados.add(rs.getString("bloqueado"));
+            }
+        }catch(SQLException e){
+            System.err.println("Error al obtener usuarios bloqueados: " + e.getMessage());
+        }
+
+        return bloqueados;
     }
 
     public static void registrarVictoria(String ganador, String perdedor){
