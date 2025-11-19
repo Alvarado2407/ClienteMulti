@@ -47,6 +47,7 @@ public class UnCliente implements Runnable {
             salida.writeUTF("- Usa /registro usuario contrase;a para registrarte");
             salida.writeUTF("- Usa /login usuario contrase;a para iniciar sesion");
             salida.writeUTF("- Usa /logout para cerrar sesion");
+            salida.writeUTF("- Usa /eliminarcuenta para eliminar tu cuenta permanentemente");
             salida.writeUTF("- Usa /creargrupo NombreGrupo para crear un grupo");
             salida.writeUTF("- Usa /unirsegrupo NombreGrupo para unirse a un grupo");
             salida.writeUTF("- Usa /eliminargrupo NombreGrupo para eliminar un grupo");
@@ -171,6 +172,27 @@ public class UnCliente implements Runnable {
                     GestorGrupos.listarGrupos(this);
                     continue;
                 }
+
+                //comando para borrar usuarios
+                if(mensaje.startsWith("/eliminarcuenta")){
+                    String[] partes = mensaje.split(" ",2);
+
+                    if(partes.length < 2 || !partes[1].equals("CONFIRMAR")){
+                        salida.writeUTF("ADVERTENCIA: Esta accion eliminara tu cuenta permanentemente. \n" +
+                                "si estas seguro, escribe: /eliminarcuenta CONFIRMAR");
+                    }else{
+                        String nombreAnterior = SistemaAutenticacion.getNombreUsuarioReal(clienteUsuario);
+                        String resultado = SistemaAutenticacion.procesarEliminarCuenta(clienteUsuario);
+                        salida.writeUTF(resultado);
+                        if(resultado.startsWith("EXITO")){
+                            salida.writeUTF("Ahora eres " + clienteUsuario + " con 3 mensajes gratuitos");
+                            ServidorMulti.notificarTodos("*** " + nombreAnterior + " se ha desconectado ***",this);
+
+                        }
+                    }
+                    continue;
+
+                }
                 
                 // Comando para invitar a jugar
                 if(mensaje.startsWith("/jugar ")){
@@ -269,7 +291,7 @@ public class UnCliente implements Runnable {
 
             } catch (IOException e) {
                 System.out.println("cliente " + SistemaAutenticacion.getNombreDisplay(clienteUsuario) + " se desconecto");
-                
+
                 // Manejar desconexión en juegos activos
                 GestorJuegos.manejarDesconexion(clienteUsuario);
                 

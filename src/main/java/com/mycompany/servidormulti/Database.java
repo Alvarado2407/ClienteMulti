@@ -357,6 +357,65 @@ public class Database {
         }
     }
 
+    public static boolean eliminarUsuario(String username){
+        if(conexion == null) {
+            System.err.println("No hay conexion a la base de datos, no se puede eliminar el usuario: " + username);
+            return false;
+        }
+
+        try{
+            conexion.setAutoCommit(false);
+            String sqlEstadisticas = "DELETE FROM estadisticas WHERE username = ?";
+            try(PreparedStatement ps = conexion.prepareStatement(sqlEstadisticas)){
+                ps.setString(1,username);
+                ps.executeUpdate();
+            }
+
+            String sqlMiembros = "DELETE FROM miembros_grupo WHERE username = ?";
+            try(PreparedStatement ps = conexion.prepareStatement(sqlMiembros)) {
+                ps.setString(1, username);
+                ps.executeUpdate();
+            }
+
+            String sqlMensajes = "DELETE FROM mensajes_grupo WHERE username = ?";
+            try(PreparedStatement ps = conexion.prepareStatement(sqlMensajes)) {
+                ps.setString(1,username);
+                ps.executeUpdate();
+            }
+
+            String sqlUsuario = "DELETE FROM usuarios WHERE username = ?";
+            try(PreparedStatement ps = conexion.prepareStatement(sqlUsuario)) {
+                ps.setString(1,username);
+                int filasAfectadas = ps.executeUpdate();
+
+                if(filasAfectadas > 0){
+                    conexion.commit();
+                    System.out.println("Usuario " + username + " eliminado correctamente");
+                    return true;
+                }else{
+                    conexion.rollback();
+                    return false;
+            }
+
+            }
+
+        }catch(SQLException e){
+            System.err.println("Error al eliminar el usuario: " + e.getMessage());
+            try{
+                conexion.rollback();
+            }catch(SQLException ex){
+                System.err.println("Error en el rollback: " + ex.getMessage());
+            }
+            return false;
+        }finally{
+            try{
+                conexion.setAutoCommit(true);
+            }catch(SQLException ex){
+                System.err.println("Error al establecer autocommit en true: " + ex.getMessage());
+            }
+        }
+    }
+
     public static void registrarVictoria(String ganador, String perdedor){
         if(conexion == null) {
             System.out.println("No se pueden registrar estadisticas en modo offline");
@@ -511,4 +570,5 @@ public class Database {
     public static boolean estaConectado(){
         return conexion != null;
     }
+
 }

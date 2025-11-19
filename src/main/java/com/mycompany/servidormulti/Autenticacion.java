@@ -17,7 +17,7 @@ public class Autenticacion {
     private static final List<String> COMANDOS_RESERVADOS = Arrays.asList(
             "registro", "login", "usuarios", "ranking", "vs",
             "creargrupo", "unirsegrupo", "eliminargrupo", "grupos",
-            "jugar", "aceptar", "rechazar", "mover"
+            "jugar", "aceptar", "rechazar", "mover", "logout", "eliminarcuenta"
     );
 
 

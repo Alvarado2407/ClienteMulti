@@ -16,7 +16,7 @@ public class SistemaAutenticacion {
     private static final List<String> COMANDOS_RESERVADOS = Arrays.asList(
             "registro", "login", "usuarios", "ranking", "vs",
             "creargrupo", "unirsegrupo", "eliminargrupo", "grupos",
-            "jugar", "aceptar", "rechazar", "mover"
+            "jugar", "aceptar", "rechazar", "mover", "logout", "eliminarcuenta"
     );
 
     public static boolean puedeEnviarMensajes(String clienteId){
@@ -74,7 +74,8 @@ public class SistemaAutenticacion {
             return "ERROR: no se pudo registrar el usuario, intenta con otro nombre";
         }
     }
-        public static String procesarLogin(String clienteId, String username, String password){
+
+    public static String procesarLogin(String clienteId, String username, String password){
 
         if(estaAutenticado(clienteId)){
             return "ERROR: ya tienes una sesion activa con este usuario, usa /logout para cerrarla";
@@ -113,6 +114,28 @@ public class SistemaAutenticacion {
         return "EXITO: Sesion cerrada correctamente. Ahora eres " + clienteId + " con 3 mensajes gratuitos";
         }
 
+        public static String procesarEliminarCuenta(String clienteId){
+        if(!estaAutenticado(clienteId)){
+            return "ERROR: no tienes una sesion activa que eliminar";
+        }
+        String username = nombresUsuarios.get(clienteId);
+
+        if(username == null){
+            return "ERROR: no se pudo identificar el usuario";
+        }
+
+        if(Database.eliminarUsuario(username)){
+            sesionesActivas.remove(username);
+            usuariosAutenticados.remove(clienteId);
+            nombresUsuarios.remove(clienteId);
+            mensajesEnviados.put(clienteId, 0);
+            return "EXITO: Cuenta eliminada permanentemente";
+        }else{
+            return "ERROR: no se pudo eliminar la cuenta";
+        }
+
+        }
+
         public static boolean estaAutenticado (String clienteId){
             return usuariosAutenticados.getOrDefault(clienteId, false);
         }
@@ -123,6 +146,7 @@ public class SistemaAutenticacion {
         }
         return clienteId;
         }
+
         public static void limpiarCliente(String clienteId){
         mensajesEnviados.remove(clienteId);
 
@@ -134,6 +158,7 @@ public class SistemaAutenticacion {
         usuariosAutenticados.remove(clienteId);
         nombresUsuarios.remove(clienteId);
         }
+
     public static String getNombreUsuarioReal(String clienteId){
         if(nombresUsuarios.containsKey(clienteId)){
             return nombresUsuarios.get(clienteId);
@@ -141,7 +166,7 @@ public class SistemaAutenticacion {
         return null;
     }
 
-        public static int getMensajesRestantes(String clienteId){
+    public static int getMensajesRestantes(String clienteId){
         if(estaAutenticado(clienteId)){
             return  -1;
         }
