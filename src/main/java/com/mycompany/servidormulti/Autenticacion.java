@@ -1,6 +1,8 @@
 package com.mycompany.servidormulti;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 public class Autenticacion {
     private static final int LIMITE_MENSAJES = 3;
@@ -8,6 +10,13 @@ public class Autenticacion {
     private static HashMap<String, Integer> mensajesEnviados = new HashMap<>();
     private static HashMap<String, Boolean> usuariosAutenticados = new HashMap<>();
     private static HashMap<String, String> nombresUsuarios = new HashMap<>();
+
+    private static final List<String> COMANDOS_RESERVADOS = Arrays.asList(
+            "registro", "login", "usuarios", "ranking", "vs",
+            "creargrupo", "unirsegrupo", "eliminargrupo", "grupos",
+            "jugar", "aceptar", "rechazar", "mover"
+    );
+
 
     public static boolean puedeEnviarMensajes(String clienteUsuario) {
         if (estaAutenticado(clienteUsuario)) {
@@ -28,10 +37,20 @@ public class Autenticacion {
         return -1;
     }
 
+    private static boolean esNombreReservado(String nombre){
+        String nombreL = nombre.toLowerCase();
+        return COMANDOS_RESERVADOS.contains(nombreL) || nombreL.startsWith("/");
+    }
+
     public static String procesarRegistro(String clienteUsuario, String usuario, String contra) {
         if (usuario == null || contra == null || usuario.trim().isEmpty() || contra.trim().isEmpty()) {
             return "El usuario y contrase;a no pueden estar vacios";
         }
+
+        if(esNombreReservado(usuario)){
+            return "ERROR: nombre de usuario reservado. Elige otro usuario";
+        }
+
         if (usuariosRegistrados.containsKey(usuario)) {
             return "El usuario ya existe. Usa /login para iniciar sesion";
         }

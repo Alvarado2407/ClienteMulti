@@ -1,6 +1,8 @@
 package com.mycompany.servidormulti;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 public class SistemaAutenticacion {
     private static final int LIMITE_MENSAJES = 3;
@@ -8,6 +10,13 @@ public class SistemaAutenticacion {
     private static HashMap<String, Integer> mensajesEnviados = new HashMap<>();
     private static HashMap<String, Boolean> usuariosAutenticados = new HashMap<>();
     private static HashMap<String, String> nombresUsuarios = new HashMap<>();
+
+
+    private static final List<String> COMANDOS_RESERVADOS = Arrays.asList(
+            "registro", "login", "usuarios", "ranking", "vs",
+            "creargrupo", "unirsegrupo", "eliminargrupo", "grupos",
+            "jugar", "aceptar", "rechazar", "mover"
+    );
 
     public static boolean puedeEnviarMensajes(String clienteId){
         if(estaAutenticado(clienteId)){
@@ -28,9 +37,18 @@ public class SistemaAutenticacion {
         return -1;
     }
 
+    private static boolean esNombreReservado(String nombre){
+        String nombreL = nombre.toLowerCase();
+        return COMANDOS_RESERVADOS.contains(nombreL) || nombreL.startsWith("/");
+    }
+
     public static String procesarRegistro (String clienteId, String username, String password) {
         if (username == null || password == null || username.trim().isEmpty() || password.trim().isEmpty()) {
             return "ERROR: usuario y contrasena no pueden estar vacios";
+        }
+
+        if(esNombreReservado(username)){
+            return "ERROR: nombre de usuario reservado. Elige otro usuario";
         }
 
         if (Database.existeUsuario(username)) {
