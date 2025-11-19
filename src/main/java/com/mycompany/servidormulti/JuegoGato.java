@@ -10,8 +10,8 @@ public class JuegoGato {
     private final String jugador2Id;
     private final String jugador1Nombre;
     private final String jugador2Nombre;
-    private final UnCliente cliente1;
-    private final UnCliente cliente2;
+    private final ManejadorSesion cliente1;
+    private final ManejadorSesion cliente2;
 
     private char[][] tablero = new char[3][3];
     private String turnoActualId;
@@ -21,7 +21,7 @@ public class JuegoGato {
     private boolean juegoTerminado;
     private String ganador;
 
-    public JuegoGato(String jugador1Id, String jugador1Nombre, String jugador2Id, String jugador2Nombre, UnCliente cliente1, UnCliente cliente2){
+    public JuegoGato(String jugador1Id, String jugador1Nombre, String jugador2Id, String jugador2Nombre, ManejadorSesion cliente1, ManejadorSesion cliente2){
         this.jugador1Id = jugador1Id;
         this.jugador1Nombre = jugador1Nombre;
         this.jugador2Id = jugador2Id;
@@ -59,15 +59,15 @@ public class JuegoGato {
     public void iniciarJuego(){
      try{
          String mensaje = "\n=== JUEGO DE GATO INICIADO ===\n";
-         cliente1.salida.writeUTF(mensaje);
-         cliente2.salida.writeUTF(mensaje);
+         cliente1.getWriter().writeUTF(mensaje);
+         cliente2.getWriter().writeUTF(mensaje);
 
-         cliente1.salida.writeUTF("Juegas con el simbolo " + simboloJugador1);
-         cliente2.salida.writeUTF("Juegas con el simbolo " + simboloJugador2);
+         cliente1.getWriter().writeUTF("Juegas con el simbolo " + simboloJugador1);
+         cliente2.getWriter().writeUTF("Juegas con el simbolo " + simboloJugador2);
 
          String mensajeTurno = "Empieza " + turnoActualNombre;
-         cliente1.salida.writeUTF(mensajeTurno);
-         cliente2.salida.writeUTF(mensajeTurno);
+         cliente1.getWriter().writeUTF(mensajeTurno);
+         cliente2.getWriter().writeUTF(mensajeTurno);
 
          enviarTablero();
          enviarInstrucciones();
@@ -79,8 +79,8 @@ public class JuegoGato {
     private void enviarInstrucciones() throws IOException{
         try{
             String instrucciones = "Para jugar usa /mover fila columna (ejemplo: /jugar 1 2)";
-            cliente1.salida.writeUTF(instrucciones);
-            cliente2.salida.writeUTF(instrucciones);
+            cliente1.getWriter().writeUTF(instrucciones);
+            cliente2.getWriter().writeUTF(instrucciones);
         }catch (IOException e){
         System.out.println("Error enviando instrucciones " + e.getMessage());
     }
@@ -171,8 +171,8 @@ public class JuegoGato {
     private void notificarTurno() throws IOException{
         try{
             String mensaje = "Turno de " + turnoActualNombre;
-            cliente1.salida.writeUTF(mensaje);
-            cliente2.salida.writeUTF(mensaje);
+            cliente1.getWriter().writeUTF(mensaje);
+            cliente2.getWriter().writeUTF(mensaje);
         }catch (IOException e){
             System.out.println("Error notificando turno " + e.getMessage());
         }
@@ -181,8 +181,8 @@ public class JuegoGato {
     private void enviarTablero() throws IOException{
         try{
             String tableroStr = generarTableroTexto();
-            cliente1.salida.writeUTF(tableroStr);
-            cliente2.salida.writeUTF(tableroStr);
+            cliente1.getWriter().writeUTF(tableroStr);
+            cliente2.getWriter().writeUTF(tableroStr);
         } catch (IOException e) {
             System.err.println("Error enviando tablero: " + e.getMessage());
         }
@@ -236,10 +236,10 @@ public class JuegoGato {
 
     private void notificarFinJuego(String mensaje) throws IOException{
         try{
-            cliente1.salida.writeUTF("\n*** FIN DE JUEGO ***\n");
-            cliente1.salida.writeUTF(mensaje);
-            cliente2.salida.writeUTF("\n*** FIN DE JUEGO ***\n");
-            cliente2.salida.writeUTF(mensaje);
+            cliente1.getWriter().writeUTF("\n*** FIN DE JUEGO ***\n");
+            cliente1.getWriter().writeUTF(mensaje);
+            cliente2.getWriter().writeUTF("\n*** FIN DE JUEGO ***\n");
+            cliente2.getWriter().writeUTF(mensaje);
         }catch (IOException e){
             System.out.println("Error notificando fin de juego " + e.getMessage());
         }
@@ -250,11 +250,11 @@ public class JuegoGato {
         juegoTerminado = true;
         String nombreDesconectado = clienteIdDesconectado.equals(jugador1Id) ? jugador1Nombre : jugador2Nombre;
         String nombreGanador = clienteIdDesconectado.equals(jugador1Id) ? jugador2Nombre : jugador1Nombre;
-        UnCliente clienteGanador = clienteIdDesconectado.equals(jugador1Id) ? cliente2 : cliente1;
+        ManejadorSesion clienteGanador = clienteIdDesconectado.equals(jugador1Id) ? cliente2 : cliente1;
 
         try{
-            clienteGanador.salida.writeUTF("\n*** FIN DE JUEGO ***\n");
-            clienteGanador.salida.writeUTF(nombreDesconectado + " se desconecto. Ganaste por abandono");
+            clienteGanador.getWriter().writeUTF("\n*** FIN DE JUEGO ***\n");
+            clienteGanador.getWriter().writeUTF(nombreDesconectado + " se desconecto. Ganaste por abandono");
         }catch (IOException e){
             System.out.println("Error notificando abandono por desconexion " + e.getMessage());
         }

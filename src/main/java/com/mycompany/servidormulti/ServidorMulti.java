@@ -14,13 +14,13 @@ import java.util.HashMap;
  * @author Yatzi
  */
 public class ServidorMulti {
-    static HashMap<String, UnCliente> clientes = new HashMap <>();
+    static HashMap<String, ManejadorSesion> clientes = new HashMap <>();
 
-    public static void notificarTodos(String mensaje, UnCliente excluir){
-        for(UnCliente cliente : clientes.values()){
+    public static void notificarTodos(String mensaje, ManejadorSesion excluir){
+        for(ManejadorSesion cliente : clientes.values()){
             if(cliente!=excluir){
                 try{
-                    cliente.salida.writeUTF(mensaje);
+                    cliente.getWriter().writeUTF(mensaje);
                 }catch(IOException e){}
             }
         }
@@ -45,7 +45,7 @@ public class ServidorMulti {
         while (true){
             Socket s = servidorSocket.accept();
             String clienteUsuario = "Usuario" + contador;
-            UnCliente unCliente = new UnCliente(s, clienteUsuario);
+            ManejadorSesion unCliente = new ManejadorSesion(s, clienteUsuario);
             Thread hilo = new Thread(unCliente);
             clientes.put(clienteUsuario, unCliente);
             

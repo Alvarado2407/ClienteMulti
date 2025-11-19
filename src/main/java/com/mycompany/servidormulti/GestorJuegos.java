@@ -12,40 +12,40 @@ public class GestorJuegos {
     // Invitaciones pendientes: clave = destinatario, valor = remitente
     private static HashMap<String, String> invitacionesPendientes = new HashMap<>();
     
-    public static void enviarInvitacion(String remitenteId, String destinatarioId, UnCliente remitente, UnCliente destinatario) throws IOException {
+    public static void enviarInvitacion(String remitenteId, String destinatarioId, ManejadorSesion remitente, ManejadorSesion destinatario) throws IOException {
         // Verificar si ya existe una invitación pendiente
         if(invitacionesPendientes.containsKey(destinatarioId)){
-            remitente.salida.writeUTF("ERROR: " + SistemaAutenticacion.getNombreDisplay(destinatarioId) + " ya tiene una invitación pendiente");
+            remitente.getWriter().writeUTF("ERROR: " + SistemaAutenticacion.getNombreDisplay(destinatarioId) + " ya tiene una invitación pendiente");
             return;
         }
         
         // Verificar si ya están jugando juntos
         if(yaEstanJugando(remitenteId, destinatarioId)){
-            remitente.salida.writeUTF("ERROR: Ya tienes un juego activo con " + SistemaAutenticacion.getNombreDisplay(destinatarioId));
+            remitente.getWriter().writeUTF("ERROR: Ya tienes un juego activo con " + SistemaAutenticacion.getNombreDisplay(destinatarioId));
             return;
         }
         
         // Enviar invitación
         invitacionesPendientes.put(destinatarioId, remitenteId);
         String nombreRemitente = SistemaAutenticacion.getNombreDisplay(remitenteId);
-        destinatario.salida.writeUTF("\n*** INVITACION DE JUEGO ***");
-        destinatario.salida.writeUTF(nombreRemitente + " te ha invitado a jugar al gato!");
-        destinatario.salida.writeUTF("Usa /aceptar para aceptar o /rechazar para rechazar");
+        destinatario.getWriter().writeUTF("\n*** INVITACION DE JUEGO ***");
+        destinatario.getWriter().writeUTF(nombreRemitente + " te ha invitado a jugar al gato!");
+        destinatario.getWriter().writeUTF("Usa /aceptar para aceptar o /rechazar para rechazar");
         
-        remitente.salida.writeUTF("Invitacion enviada a " + SistemaAutenticacion.getNombreDisplay(destinatarioId));
+        remitente.getWriter().writeUTF("Invitacion enviada a " + SistemaAutenticacion.getNombreDisplay(destinatarioId));
     }
     
-    public static void aceptarInvitacion(String clienteId, UnCliente cliente) throws IOException {
+    public static void aceptarInvitacion(String clienteId, ManejadorSesion cliente) throws IOException {
         if(!invitacionesPendientes.containsKey(clienteId)){
-            cliente.salida.writeUTF("No tienes invitaciones pendientes");
+            cliente.getWriter().writeUTF("No tienes invitaciones pendientes");
             return;
         }
         
         String remitenteId = invitacionesPendientes.remove(clienteId);
-        UnCliente remitente = ServidorMulti.clientes.get(remitenteId);
+        ManejadorSesion remitente = ServidorMulti.clientes.get(remitenteId);
         
         if(remitente == null){
-            cliente.salida.writeUTF("El usuario que te invito ya no esta conectado");
+            cliente.getWriter().writeUTF("El usuario que te invito ya no esta conectado");
             return;
         }
         
@@ -63,22 +63,22 @@ public class GestorJuegos {
         juego.iniciarJuego();
     }
     
-    public static void rechazarInvitacion(String clienteId, UnCliente cliente) throws IOException {
+    public static void rechazarInvitacion(String clienteId, ManejadorSesion cliente) throws IOException {
         if(!invitacionesPendientes.containsKey(clienteId)){
-            cliente.salida.writeUTF("No tienes invitaciones pendientes");
+            cliente.getWriter().writeUTF("No tienes invitaciones pendientes");
             return;
         }
         
         String remitenteId = invitacionesPendientes.remove(clienteId);
-        UnCliente remitente = ServidorMulti.clientes.get(remitenteId);
+        ManejadorSesion remitente = ServidorMulti.clientes.get(remitenteId);
         
         String nombreDestinatario = SistemaAutenticacion.getNombreDisplay(clienteId);
         
         if(remitente != null){
-            remitente.salida.writeUTF(nombreDestinatario + " ha rechazado tu invitacion de juego");
+            remitente.getWriter().writeUTF(nombreDestinatario + " ha rechazado tu invitacion de juego");
         }
         
-        cliente.salida.writeUTF("Has rechazado la invitacion");
+        cliente.getWriter().writeUTF("Has rechazado la invitacion");
     }
     
     public static boolean yaEstanJugando(String cliente1Id, String cliente2Id){
@@ -92,11 +92,11 @@ public class GestorJuegos {
         return juegosActivos.get(clienteId);
     }
     
-    public static void procesarMovimiento(String clienteId, int fila, int columna, UnCliente cliente) throws IOException {
+    public static void procesarMovimiento(String clienteId, int fila, int columna, ManejadorSesion cliente) throws IOException {
         JuegoGato juego = juegosActivos.get(clienteId);
         
         if(juego == null){
-            cliente.salida.writeUTF("No estas en ningun juego activo");
+            cliente.getWriter().writeUTF("No estas en ningun juego activo");
             return;
         }
         

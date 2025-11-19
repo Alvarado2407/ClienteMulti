@@ -20,18 +20,18 @@ public class GestorGrupos {
         Database.crearGrupoSiNoExiste("Todos");
     }
 
-    public static void unirseAGrupo(String clienteId, String nombreGrupo, UnCliente cliente) throws IOException {
+    public static void unirseAGrupo(String clienteId, String nombreGrupo, ManejadorSesion cliente) throws IOException {
         String username = SistemaAutenticacion.getNombreUsuarioReal(clienteId);
 
         // Verificar si es invitado y intenta unirse a un grupo que no es "Todos"
         if(username == null && !nombreGrupo.equals("Todos")){
-            cliente.salida.writeUTF("Los usuarios invitados solo pueden estar en el grupo 'Todos'");
+            cliente.getWriter().writeUTF("Los usuarios invitados solo pueden estar en el grupo 'Todos'");
             return;
         }
 
         // Verificar que el grupo existe
         if(!Database.existeGrupo(nombreGrupo)){
-            cliente.salida.writeUTF("El grupo '" + nombreGrupo + "' no existe");
+            cliente.getWriter().writeUTF("El grupo '" + nombreGrupo + "' no existe");
             return;
         }
 
@@ -49,53 +49,53 @@ public class GestorGrupos {
         }
 
         notificarGrupo(nombreGrupo, "*** " + SistemaAutenticacion.getNombreDisplay(clienteId) + " se ha unido al grupo ***", cliente);
-        cliente.salida.writeUTF("Te has unido al grupo: " + nombreGrupo);
+        cliente.getWriter().writeUTF("Te has unido al grupo: " + nombreGrupo);
 
         // Enviar mensajes no leídos
         enviarMensajesNoLeidos(clienteId, nombreGrupo, cliente);
     }
 
-    public static void crearGrupo(String clienteId, String nombreGrupo, UnCliente cliente) throws IOException {
+    public static void crearGrupo(String clienteId, String nombreGrupo, ManejadorSesion cliente) throws IOException {
         String username = SistemaAutenticacion.getNombreUsuarioReal(clienteId);
 
         if(username == null){
-            cliente.salida.writeUTF("Los usuarios invitados no pueden crear grupos");
+            cliente.getWriter().writeUTF("Los usuarios invitados no pueden crear grupos");
             return;
         }
 
         if(nombreGrupo.equals("Todos")){
-            cliente.salida.writeUTF("El grupo 'Todos' ya existe y no se puede recrear");
+            cliente.getWriter().writeUTF("El grupo 'Todos' ya existe y no se puede recrear");
             return;
         }
 
         if(Database.existeGrupo(nombreGrupo)){
-            cliente.salida.writeUTF("El grupo '" + nombreGrupo + "' ya existe");
+            cliente.getWriter().writeUTF("El grupo '" + nombreGrupo + "' ya existe");
             return;
         }
 
         if(Database.crearGrupo(nombreGrupo, username)){
-            cliente.salida.writeUTF("Grupo '" + nombreGrupo + "' creado exitosamente");
+            cliente.getWriter().writeUTF("Grupo '" + nombreGrupo + "' creado exitosamente");
             System.out.println("Grupo '" + nombreGrupo + "' creado por " + username);
         } else {
-            cliente.salida.writeUTF("Error al crear el grupo");
+            cliente.getWriter().writeUTF("Error al crear el grupo");
         }
     }
 
-    public static void eliminarGrupo(String clienteId, String nombreGrupo, UnCliente cliente) throws IOException {
+    public static void eliminarGrupo(String clienteId, String nombreGrupo, ManejadorSesion cliente) throws IOException {
         String username = SistemaAutenticacion.getNombreUsuarioReal(clienteId);
 
         if(username == null){
-            cliente.salida.writeUTF("Los usuarios invitados no pueden eliminar grupos");
+            cliente.getWriter().writeUTF("Los usuarios invitados no pueden eliminar grupos");
             return;
         }
 
         if(nombreGrupo.equals("Todos")){
-            cliente.salida.writeUTF("El grupo 'Todos' no se puede eliminar");
+            cliente.getWriter().writeUTF("El grupo 'Todos' no se puede eliminar");
             return;
         }
 
         if(!Database.existeGrupo(nombreGrupo)){
-            cliente.salida.writeUTF("El grupo '" + nombreGrupo + "' no existe");
+            cliente.getWriter().writeUTF("El grupo '" + nombreGrupo + "' no existe");
             return;
         }
 
@@ -109,29 +109,29 @@ public class GestorGrupos {
 
         for(String cId : clientesAMover){
             clientesEnGrupos.put(cId, "Todos");
-            UnCliente c = ServidorMulti.clientes.get(cId);
+            ManejadorSesion c = ServidorMulti.clientes.get(cId);
             if(c != null){
-                c.salida.writeUTF("El grupo '" + nombreGrupo + "' ha sido eliminado. Has sido movido a 'Todos'");
+                c.getWriter().writeUTF("El grupo '" + nombreGrupo + "' ha sido eliminado. Has sido movido a 'Todos'");
             }
         }
 
         if(Database.eliminarGrupo(nombreGrupo)){
-            cliente.salida.writeUTF("Grupo '" + nombreGrupo + "' eliminado exitosamente");
+            cliente.getWriter().writeUTF("Grupo '" + nombreGrupo + "' eliminado exitosamente");
             System.out.println("Grupo '" + nombreGrupo + "' eliminado por " + username);
         } else {
-            cliente.salida.writeUTF("Error al eliminar el grupo");
+            cliente.getWriter().writeUTF("Error al eliminar el grupo");
         }
     }
 
-    public static void listarGrupos(UnCliente cliente) throws IOException {
+    public static void listarGrupos(ManejadorSesion cliente) throws IOException {
         List<String> grupos = Database.obtenerListaGrupos();
-        cliente.salida.writeUTF("\n=== GRUPOS DISPONIBLES ===");
+        cliente.getWriter().writeUTF("\n=== GRUPOS DISPONIBLES ===");
         for(String grupo : grupos){
-            cliente.salida.writeUTF("- " + grupo);
+            cliente.getWriter().writeUTF("- " + grupo);
         }
     }
 
-    public static void enviarMensajeGrupo(String clienteId, String mensaje, UnCliente cliente) throws IOException {
+    public static void enviarMensajeGrupo(String clienteId, String mensaje, ManejadorSesion cliente) throws IOException {
         String grupoActual = clientesEnGrupos.getOrDefault(clienteId, "Todos");
         String nombreRemitente = SistemaAutenticacion.getNombreDisplay(clienteId);
         String username = SistemaAutenticacion.getNombreUsuarioReal(clienteId);
@@ -148,10 +148,10 @@ public class GestorGrupos {
             if(entry.getValue().equals(grupoActual)){
                 String destinoId = entry.getKey();
                 if(!destinoId.equals(clienteId)){
-                    UnCliente destino = ServidorMulti.clientes.get(destinoId);
+                    ManejadorSesion destino = ServidorMulti.clientes.get(destinoId);
                     if(destino != null){
                         try{
-                            destino.salida.writeUTF(mensajeFormateado);
+                            destino.getWriter().writeUTF(mensajeFormateado);
                         }catch(IOException e){}
                     }
                 }
@@ -164,7 +164,7 @@ public class GestorGrupos {
         }
     }
 
-    private static void enviarMensajesNoLeidos(String clienteId, String nombreGrupo, UnCliente cliente) throws IOException {
+    private static void enviarMensajesNoLeidos(String clienteId, String nombreGrupo, ManejadorSesion cliente) throws IOException {
         String username = SistemaAutenticacion.getNombreUsuarioReal(clienteId);
 
         if(username == null){
@@ -176,23 +176,23 @@ public class GestorGrupos {
         List<String> mensajesNoLeidos = Database.obtenerMensajesNoLeidos(nombreGrupo, ultimoVisto);
 
         if(!mensajesNoLeidos.isEmpty()){
-            cliente.salida.writeUTF("\n=== MENSAJES NO LEIDOS EN " + nombreGrupo + " ===");
+            cliente.getWriter().writeUTF("\n=== MENSAJES NO LEIDOS EN " + nombreGrupo + " ===");
             for(String msg : mensajesNoLeidos){
-                cliente.salida.writeUTF(msg);
+                cliente.getWriter().writeUTF(msg);
             }
-            cliente.salida.writeUTF("=== FIN DE MENSAJES NO LEIDOS ===\n");
+            cliente.getWriter().writeUTF("=== FIN DE MENSAJES NO LEIDOS ===\n");
         }
 
         actualizarUltimoMensajeVisto(username, nombreGrupo);
     }
 
-    private static void notificarGrupo(String nombreGrupo, String mensaje, UnCliente excluir){
+    private static void notificarGrupo(String nombreGrupo, String mensaje, ManejadorSesion excluir){
         for(Map.Entry<String, String> entry : clientesEnGrupos.entrySet()){
             if(entry.getValue().equals(nombreGrupo)){
-                UnCliente cliente = ServidorMulti.clientes.get(entry.getKey());
+                ManejadorSesion cliente = ServidorMulti.clientes.get(entry.getKey());
                 if(cliente != null && cliente != excluir){
                     try{
-                        cliente.salida.writeUTF(mensaje);
+                        cliente.getWriter().writeUTF(mensaje);
                     }catch(IOException e){}
                 }
             }

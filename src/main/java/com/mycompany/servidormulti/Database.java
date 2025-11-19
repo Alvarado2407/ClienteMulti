@@ -9,9 +9,9 @@ import java.util.List;
 
 public class Database {
 
-    private static String DB_URL = "jdbc:postgresql://localhost:5432/chat_db";
+    private static String DB_URL = "jdbc:postgresql://localhost:5432/clienteMulti";
     private static String DB_USER = "postgres";
-    private static String DB_PASSWORD = "Quieroserescritora10";
+    private static String DB_PASSWORD = "admin";
 
     private static Connection conexion;
 
@@ -88,6 +88,7 @@ public class Database {
         crearTablaGrupos();
         crearTablaMiembrosGrupo();
         crearTablaMensajesGrupo();
+        crearTablaBloqueos();
     }
 
     private static void crearTablaBloqueos() throws SQLException{
@@ -96,7 +97,7 @@ public class Database {
                 id SERIAL PRIMARY KEY,
                 bloqueador varchar(50) NOT NULL,
                 bloqueado varchar(50) NOT NULL,
-                fecha_bloqueo TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                fecha_bloqueo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 unique(bloqueador, bloqueado),
                 FOREIGN KEY (bloqueador) REFERENCES usuarios(username) ON DELETE CASCADE,
                 FOREIGN KEY (bloqueado) REFERENCES usuarios(username) ON DELETE CASCADE
@@ -485,7 +486,7 @@ public class Database {
             return false;
         }
 
-        String sql = "SELECT 1 FROM bloqueo WHERE (bloqueador = ? AND bloqueado = ?) OR (bloqueador = ? AND bloqueado = ?)";
+        String sql = "SELECT 1 FROM bloqueos WHERE (bloqueador = ? AND bloqueado = ?) OR (bloqueador = ? AND bloqueado = ?)";
         try(PreparedStatement pstmt = conexion.prepareStatement(sql)){
             pstmt.setString(1,usuario1);
             pstmt.setString(2,usuario2);
