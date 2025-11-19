@@ -138,8 +138,8 @@ public class JuegoGato {
             juegoTerminado = true;
             
             // Registrar empate en la base de datos
-            String nombreJ1Real = SistemaAutenticacion.getNombreUsuarioReal(jugador1Nombre);
-            String nombreJ2Real = SistemaAutenticacion.getNombreUsuarioReal(jugador2Nombre);
+            String nombreJ1Real = SistemaAutenticacion.getNombreUsuarioReal(jugador1Id);
+            String nombreJ2Real = SistemaAutenticacion.getNombreUsuarioReal(jugador2Id);
             if(nombreJ1Real != null && nombreJ2Real != null){
                 System.out.println("Registrando empate entre: " + nombreJ1Real + " y " + nombreJ2Real);
                 Database.registrarEmpate(nombreJ1Real, nombreJ2Real);
