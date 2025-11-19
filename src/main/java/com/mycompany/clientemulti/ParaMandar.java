@@ -19,7 +19,9 @@ public class ParaMandar implements Runnable{
             String mensaje;
             try{
                 mensaje = teclado.readLine();
-                salida.writeUTF(mensaje);
+                if(mensaje != null && !mensaje.trim().isEmpty()){
+                    salida.writeUTF(mensaje);
+                }
             } catch (IOException ex){
                 
             }
