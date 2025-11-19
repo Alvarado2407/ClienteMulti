@@ -46,6 +46,7 @@ public class UnCliente implements Runnable {
             salida.writeUTF("- Usa /vs jugador1 jugador2 para ver estadisticas entre dos jugadores");
             salida.writeUTF("- Usa /registro usuario contrase;a para registrarte");
             salida.writeUTF("- Usa /login usuario contrase;a para iniciar sesion");
+            salida.writeUTF("- Usa /logout para cerrar sesion");
             salida.writeUTF("- Usa /creargrupo NombreGrupo para crear un grupo");
             salida.writeUTF("- Usa /unirsegrupo NombreGrupo para unirse a un grupo");
             salida.writeUTF("- Usa /eliminargrupo NombreGrupo para eliminar un grupo");
@@ -88,6 +89,17 @@ public class UnCliente implements Runnable {
                         }
                     }else{
                         salida.writeUTF("El formato es /login usuario contrase;a");
+                    }
+                    continue;
+                }
+
+                if(mensaje.equals("/logout")){
+                    String nombreAnterior = SistemaAutenticacion.getNombreUsuarioReal(clienteUsuario);
+                    String resultado = SistemaAutenticacion.procesarLogout(clienteUsuario);
+                    salida.writeUTF(resultado);
+                    if(resultado.startsWith("EXITO")){
+                        ServidorMulti.notificarTodos("*** " + nombreAnterior + " se ha desconectado ***",this);
+                        ServidorMulti.notificarTodos("*** " + clienteUsuario + " se ha conectado ***",this);
                     }
                     continue;
                 }
